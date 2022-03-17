@@ -1,0 +1,30 @@
+version: '3'
+services:
+  db:
+    build: ./postgres-camunda-ee
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=process-engine
+      - POSTGRES_USER=camunda
+      - POSTGRES_PASSWORD=camunda
+    healthcheck:
+        test: ["CMD-SHELL", "pg_isready -d process-engine -U camunda"]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+  engine:
+    image: registry.camunda.cloud/cambpm-ee/camunda-bpm-platform-ee:7.16.0
+    ports:
+      - "8080:8080"
+    depends_on: 
+      db:
+        condition: service_healthy
+    environment:
+      - DB_DRIVER=org.postgresql.Driver
+      - DB_URL=jdbc:postgresql://db:5432/process-engine
+      - DB_USERNAME=camunda
+      - DB_PASSWORD=camunda
+    volumes:
+      - ./camunda-enterprise-license.txt:/camunda/.camunda/license.txt:ro
+      - ./logging.properties:/camunda/conf/logging.properties
